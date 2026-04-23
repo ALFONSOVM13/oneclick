@@ -32,7 +32,7 @@ const RESTAURANT = {
   deliveryTime: "30-45 min",
   deliveryFee: "Por definir",
   minOrder: "$ 10.000",
-  phone: "573052015039" // Número de WhatsApp real
+  phone: "573104330179" // Número de WhatsApp (+57 310 4330179)
 };
 
 const CATEGORIES = [
