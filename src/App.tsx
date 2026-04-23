@@ -22,13 +22,14 @@ import {
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('es-CO').format(price);
 };
+const DISH_IMAGE = "/images/hamburguesa.png";
 
 // --- MOCK DATA ---
 const RESTAURANT = {
   name: "RUMORES FASTFOOD",
   description: "¡Perras, pero no tus vecinas! Calle 36B#13C-04",
-  cover: "https://picsum.photos/seed/rumorescover/800/300",
-  logo: "https://picsum.photos/seed/rumoreslogo/150/150",
+  cover: "/images/banner.png",
+  logo: "/images/logo.png",
   deliveryTime: "30-45 min",
   deliveryFee: "Por definir",
   minOrder: "$ 10.000",
@@ -138,7 +139,7 @@ const NEIGHBORHOODS = [
 
 const getDeliveryFee = (neighborhood: string) => {
   if (!neighborhood) return 0;
-  if (neighborhood === "La Unión") return 0;
+  if (neighborhood === "La Unión") return 3000;
   return 5000; // Default fee for other neighborhoods
 };
 
@@ -158,6 +159,8 @@ export default function App() {
     amountReceived: '',
     comments: ''
   });
+  const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
+  const [isNeighborhoodSelectorOpen, setIsNeighborhoodSelectorOpen] = useState(false);
 
   // Scroll active category button into view
   useEffect(() => {
@@ -241,6 +244,14 @@ export default function App() {
   const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const deliveryFee = getDeliveryFee(checkoutData.neighborhood);
   const finalTotal = cartTotal + deliveryFee;
+  const filteredNeighborhoods = NEIGHBORHOODS.filter((hood) =>
+    hood.toLowerCase().includes(neighborhoodSearch.toLowerCase())
+  );
+  const visibleNeighborhoods =
+    checkoutData.neighborhood &&
+    !filteredNeighborhoods.includes(checkoutData.neighborhood)
+      ? [checkoutData.neighborhood, ...filteredNeighborhoods]
+      : filteredNeighborhoods;
 
   const handleWhatsAppCheckout = () => {
     const orderId = `CO-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
@@ -289,7 +300,7 @@ export default function App() {
     partes.push(
       '',
       `Subtotal: $ ${formatPrice(cartTotal)}`,
-      `Costo de entrega: ${deliveryFee === 0 ? 'Gratis' : '$ ' + formatPrice(deliveryFee)}`,
+      `Costo de entrega: $ ${formatPrice(deliveryFee)}`,
       `*Total: $ ${formatPrice(finalTotal)}*`,
       '',
       '*Pago*',
@@ -453,7 +464,7 @@ export default function App() {
                     </div>
                     <div className="w-28 h-28 shrink-0 pointer-events-none">
                       <img 
-                        src={item.img} 
+                        src={DISH_IMAGE}
                         alt={item.name} 
                         className="w-full h-full object-cover rounded-xl"
                         referrerPolicy="no-referrer"
@@ -584,22 +595,6 @@ export default function App() {
                         </div>
                       )}
 
-                      {cart.length > 0 && (
-                        <div className="mt-8 pt-4 border-t border-gray-100 space-y-3">
-                          <div className="flex justify-between text-sm text-gray-500">
-                            <span>Subtotal</span>
-                            <span>${formatPrice(cartTotal)}</span>
-                          </div>
-                          <div className="flex justify-between text-sm text-gray-500">
-                            <span>Envío (estimado)</span>
-                            <span>{checkoutData.neighborhood ? (deliveryFee === 0 ? 'Gratis' : `$${formatPrice(deliveryFee)}`) : 'Selecciona tu barrio'}</span>
-                          </div>
-                          <div className="flex justify-between text-lg font-bold text-gray-900 pt-2">
-                            <span>Total</span>
-                            <span>${formatPrice(finalTotal)}</span>
-                          </div>
-                        </div>
-                      )}
                     </>
                   ) : (
                     /* --- CHECKOUT FORM VIEW --- */
@@ -610,7 +605,7 @@ export default function App() {
                           type="text" 
                           value={checkoutData.name}
                           onChange={e => setCheckoutData({...checkoutData, name: e.target.value})}
-                          placeholder="Ej. Alfonso"
+                          placeholder="Ej. Alfonso Pérez"
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                         />
                       </div>
@@ -621,23 +616,59 @@ export default function App() {
                           type="tel" 
                           value={checkoutData.phone}
                           onChange={e => setCheckoutData({...checkoutData, phone: e.target.value})}
-                          placeholder="Ej. 57 3237991725"
+                          placeholder="Ej. 310 123 4567"
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Barrio *</label>
-                        <select 
-                          value={checkoutData.neighborhood}
-                          onChange={e => setCheckoutData({...checkoutData, neighborhood: e.target.value})}
-                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white"
-                        >
-                          <option value="" disabled>Selecciona tu barrio</option>
-                          {NEIGHBORHOODS.map(hood => (
-                            <option key={hood} value={hood}>{hood}</option>
-                          ))}
-                        </select>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsNeighborhoodSelectorOpen((prev) => !prev)}
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all bg-white flex items-center justify-between text-left"
+                          >
+                            <span className={checkoutData.neighborhood ? "text-gray-900" : "text-gray-400"}>
+                              {checkoutData.neighborhood || "Selecciona tu barrio de entrega"}
+                            </span>
+                            <ChevronRight className={`w-4 h-4 text-gray-500 transition-transform ${isNeighborhoodSelectorOpen ? "rotate-90" : ""}`} />
+                          </button>
+
+                          {isNeighborhoodSelectorOpen && (
+                            <div className="absolute z-50 mt-2 w-full bg-white border border-gray-200 rounded-xl shadow-lg p-2">
+                              <input
+                                type="text"
+                                value={neighborhoodSearch}
+                                onChange={e => setNeighborhoodSearch(e.target.value)}
+                                placeholder="Buscar barrio..."
+                                className="w-full mb-2 px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                              />
+                              <div className="max-h-44 overflow-y-auto">
+                                {visibleNeighborhoods.length > 0 ? (
+                                  visibleNeighborhoods.map(hood => (
+                                    <button
+                                      key={hood}
+                                      type="button"
+                                      onClick={() => {
+                                        setCheckoutData({ ...checkoutData, neighborhood: hood });
+                                        setNeighborhoodSearch('');
+                                        setIsNeighborhoodSelectorOpen(false);
+                                      }}
+                                      className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-orange-50 ${
+                                        checkoutData.neighborhood === hood ? "bg-orange-50 text-orange-700 font-medium" : "text-gray-700"
+                                      }`}
+                                    >
+                                      {hood}
+                                    </button>
+                                  ))
+                                ) : (
+                                  <p className="px-3 py-2 text-sm text-gray-500">No hay barrios con esa búsqueda.</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <div>
@@ -646,7 +677,6 @@ export default function App() {
                           type="text" 
                           value={checkoutData.address}
                           onChange={e => setCheckoutData({...checkoutData, address: e.target.value})}
-                          placeholder="Ej. Carrera 16 36b 48 #48"
                           className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                         />
                       </div>
@@ -673,7 +703,19 @@ export default function App() {
                           <input 
                             type="number" 
                             value={checkoutData.amountReceived}
+                            min={finalTotal}
+                            onFocus={() => {
+                              if (!checkoutData.amountReceived) {
+                                setCheckoutData({...checkoutData, amountReceived: String(finalTotal)});
+                              }
+                            }}
                             onChange={e => setCheckoutData({...checkoutData, amountReceived: e.target.value})}
+                            onBlur={() => {
+                              const numericValue = Number(checkoutData.amountReceived);
+                              if (!checkoutData.amountReceived || Number.isNaN(numericValue) || numericValue < finalTotal) {
+                                setCheckoutData({...checkoutData, amountReceived: String(finalTotal)});
+                              }
+                            }}
                             placeholder={`Ej. 50000 (Total: $${formatPrice(finalTotal)})`}
                             className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
                           />
@@ -696,6 +738,23 @@ export default function App() {
 
                 {/* Footer Action */}
                 <div className="p-5 bg-gray-50 border-t border-gray-100 pb-8 shrink-0">
+                  {cart.length > 0 && (
+                    <div className="mb-4 rounded-xl bg-white border border-gray-200 p-3">
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>Subtotal</span>
+                        <span>${formatPrice(cartTotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Envío</span>
+                        <span>{checkoutData.neighborhood ? `$${formatPrice(deliveryFee)}` : 'Por definir'}</span>
+                      </div>
+                      <div className="flex justify-between text-base font-bold text-gray-900 mt-2 pt-2 border-t border-gray-100">
+                        <span>Total</span>
+                        <span>${formatPrice(finalTotal)}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {cartStep === 'cart' ? (
                     <button 
                       disabled={cart.length === 0}
