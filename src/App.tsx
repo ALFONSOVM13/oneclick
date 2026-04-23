@@ -25,7 +25,7 @@ const formatPrice = (price: number) => {
 
 // --- MOCK DATA ---
 const RESTAURANT = {
-  name: "Rumores Fast Food",
+  name: "RUMORES FASTFOOD",
   description: "¡Perras, pero no tus vecinas! Calle 36B#13C-04",
   cover: "https://picsum.photos/seed/rumorescover/800/300",
   logo: "https://picsum.photos/seed/rumoreslogo/150/150",
@@ -243,53 +243,84 @@ export default function App() {
   const finalTotal = cartTotal + deliveryFee;
 
   const handleWhatsAppCheckout = () => {
-    const orderId = `CO-${Math.floor(Math.random() * 10000000000).toString().padStart(10, '0')}`;
+    const orderId = `CO-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
     const now = new Date();
-    
-    // Formato de fecha: DD/MM/YYYY
-    const dateStr = now.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    // Formato de hora: hh:mm am/pm
-    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
-
-    let message = `👋 Vengo de https://bigrow.ola.click\n`;
-    message += `${orderId}\n`;
-    message += `🗓️ ${dateStr} ⏰ ${timeStr}\n\n`;
-    
-    message += `*Tipo de servicio: Domicilio*\n\n`;
-    
-    message += `Nombre: ${checkoutData.name}\n`;
-    message += `Teléfono: ${checkoutData.phone}\n`;
-    message += `Barrio: ${checkoutData.neighborhood}\n`;
-    message += `Dirección: ${checkoutData.address}\n\n`;
-    
-    message += `*📝 Productos*\n`;
-    cart.forEach(item => {
-      message += `*X${item.quantity} ${item.name}  $ ${formatPrice(item.price * item.quantity)}*\n`;
+    const fechaHora = now.toLocaleString('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
     });
-    
-    message += `\nSubtotal: $ ${formatPrice(cartTotal)}\n`;
-    message += `Entrega: ${deliveryFee === 0 ? 'Gratis' : '$ ' + formatPrice(deliveryFee)}\n`;
-    message += `*Total: $ ${formatPrice(finalTotal)}*\n\n`;
-    
-    message += `*💲 Pago*\n`;
-    message += `Estado del pago: No pagado\n`;
-    message += `*Total a pagar: $ ${formatPrice(finalTotal)}*\n`;
-    
+
+    const pedidoDesde =
+      typeof window !== 'undefined' && window.location?.href
+        ? window.location.href.split('#')[0].split('?')[0]
+        : '';
+
+    const partes: string[] = [
+      `*${RESTAURANT.name}*`,
+      `ID pedido: ${orderId}`,
+      `Fecha y hora: ${fechaHora}`,
+    ];
+    if (pedidoDesde) {
+      partes.push(`Pedido desde: ${pedidoDesde}`);
+    }
+    partes.push(
+      '',
+      '--------------------------------',
+      '',
+      '*Tipo de servicio:* Domicilio',
+      '',
+      '*Datos de contacto*',
+      `Nombre: ${checkoutData.name}`,
+      `Teléfono: ${checkoutData.phone}`,
+      `Barrio: ${checkoutData.neighborhood}`,
+      `Dirección: ${checkoutData.address}`,
+      '',
+      '*Productos*',
+    );
+
+    cart.forEach((item) => {
+      partes.push(`- ${item.quantity}x ${item.name}  $ ${formatPrice(item.price * item.quantity)}`);
+    });
+
+    partes.push(
+      '',
+      `Subtotal: $ ${formatPrice(cartTotal)}`,
+      `Costo de entrega: ${deliveryFee === 0 ? 'Gratis' : '$ ' + formatPrice(deliveryFee)}`,
+      `*Total: $ ${formatPrice(finalTotal)}*`,
+      '',
+      '*Pago*',
+      'Estado: pendiente de confirmación',
+      `Total a pagar: $ ${formatPrice(finalTotal)}`,
+    );
+
     if (checkoutData.paymentMethod === 'Efectivo') {
       const received = parseFloat(checkoutData.amountReceived) || finalTotal;
       const change = received > finalTotal ? received - finalTotal : 0;
-      message += `Efectivo ${formatPrice(finalTotal)} (monto recibido ${formatPrice(received)}, vuelto ${formatPrice(change)})\n\n`;
+      partes.push(
+        `Método: Efectivo`,
+        `Paga con: $ ${formatPrice(received)}`,
+        `Vuelto: $ ${formatPrice(change)}`,
+      );
     } else {
-      message += `${checkoutData.paymentMethod}\n\n`;
+      partes.push(`Método: ${checkoutData.paymentMethod}`);
     }
-    
+
     if (checkoutData.comments.trim()) {
-      message += `*Comentarios adicionales:*\n`;
-      message += `_${checkoutData.comments}_\n\n`;
+      partes.push('', '*Notas del cliente*', checkoutData.comments.trim());
     }
-    
-    message += `👆 Envíanos este mensaje ahora. En cuanto lo recibamos estaremos atendiéndole.`;
-    
+
+    partes.push(
+      '',
+      '--------------------------------',
+      '',
+      `Por favor envía este mensaje para confirmar el pedido. Gracias por elegir ${RESTAURANT.name}.`,
+    );
+
+    const message = partes.join('\n');
     window.open(`https://wa.me/${RESTAURANT.phone}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
